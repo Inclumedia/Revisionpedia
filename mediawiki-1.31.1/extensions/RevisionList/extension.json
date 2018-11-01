@@ -1,0 +1,26 @@
+{
+	"name": "Revision list",
+	"version": "1.1.0",
+	"author": [
+		"Leucosticte"
+	],
+	"url": "https://www.mediawiki.org/wiki/Extension:RevisionList",
+	"description": "Gives a list of revisions",
+	"license-name": "GPL",
+	"type": "specialpage",
+	"AutoloadClasses": {
+		"SpecialRevisionList": "SpecialRevisionList.php"
+	},
+	"SpecialPages": {
+		"RevisionList": "SpecialRevisionList"
+	},
+	"ExtensionMessagesFiles": {
+		"RevisionListAlias": "i18n/RevisionList.i18n.alias.php"
+	},
+	"MessagesDirs": {
+		"RevisionList": [
+			"i18n"
+		]
+	},
+	"manifest_version": 1
+}

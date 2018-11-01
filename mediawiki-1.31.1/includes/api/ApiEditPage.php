@@ -31,10 +31,56 @@
  */
 class ApiEditPage extends ApiBase {
 	public function execute() {
+		global $wgSdTimestamp;		# SD
+		global $wgSdNamespace;		# SD
+		global $wgSdTitle;			# SD
+		global $wgSdUser;			# SD
+		global $wgSdUserId;			# SD
+		global $wgSdTags;			# SD
+		global $wgSdPage;			# SD
+		global $wgSdRemoteRev;		# SD
 		$this->useTransactionalTimeLimit();
 
 		$user = $this->getUser();
 		$params = $this->extractRequestParams();
+		
+		if ( isset( $params['timestamp'] ) ) {							# SD
+			$wgSdTimestamp = $params['timestamp'];						# SD
+		}																# SD
+		if ( isset( $params['namespace'] ) ) {							# SD
+			$wgSdNamespace = $params['namespace'];						# SD
+		}																# SD
+		if ( isset( $params['remotetitle'] ) ) {						# SD
+			$wgSdTitle = $params['remotetitle'];						# SD
+		}																# SD
+		if ( isset( $params['user'] ) ) {								# SD
+			$wgSdUser = $params['user'];								# SD
+		}																# SD
+		if ( isset( $params['userid'] ) ) {								# SD
+			$wgSdUserId = $params['userid'];							# SD
+		}																# SD
+		if ( isset( $params['sdtags'] ) ) {								# SD
+			$wgSdTags = $params['sdtags'];								# SD
+		}																# SD
+		if ( isset( $params['page'] ) ) {								# SD
+			$wgSdPage = $params['page'];								# SD
+		}																# SD
+		
+		if ( isset( $params['remoterev'] ) ) {							# SD
+			$wgSdRemoteRev = $params['remoterev'];						# SD
+			$dbw = wfGetDB( DB_MASTER );								# SD
+			$field = $dbw->selectField(									# SD
+				'revision',												# SD
+				'rev_remote_rev',										# SD
+				array( 'rev_remote_rev' => $params['remoterev'] )		# SD
+			);															# SD
+			// If it's already in the database, abort					# SD
+			if ( $field ) {												# SD
+				$this->dieUsage( 'The edit was already saved',			# SD
+					'edit-already-saved' );								# SD
+				return;													# SD
+			}															# SD
+		}																# SD
 
 		$this->requireAtLeastOneParameter( $params, 'text', 'appendtext', 'prependtext', 'undo' );
 
@@ -593,6 +639,30 @@ class ApiEditPage extends ApiBase {
 			],
 			'contentmodel' => [
 				ApiBase::PARAM_TYPE => ContentHandler::getContentModels(),
+			],											# SD
+			'namespace' => [							# SD
+				ApiBase::PARAM_TYPE => 'integer'		# SD
+			],											# SD
+			'remotetitle' => [							# SD
+				ApiBase::PARAM_TYPE => 'text'			# SD
+			],											# SD
+			'page' => [									# SD
+				ApiBase::PARAM_TYPE => 'integer'		# SD
+			],											# SD
+			'timestamp' => [							# SD
+				ApiBase::PARAM_TYPE => 'timestamp'		# SD
+			],											# SD
+			'user' => [									# SD
+				ApiBase::PARAM_TYPE => 'text'			# SD
+			],											# SD
+			'userid' => [								# SD
+				ApiBase::PARAM_TYPE => 'integer'		# SD
+			],											# SD
+			'sdtags' => [								# SD
+				ApiBase::PARAM_TYPE => 'text'			# SD
+			],											# SD
+			'remoterev' => [							# SD
+				ApiBase::PARAM_TYPE => 'integer'		# SD
 			],
 			'token' => [
 				// Standard definition automatically inserted

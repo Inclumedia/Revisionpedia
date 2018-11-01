@@ -412,7 +412,26 @@ CREATE TABLE /*_*/revision (
   -- content format, see CONTENT_FORMAT_XXX constants
   -- @deprecated since 1.31. If rows in the slots table with slot_revision_id = rev_id
   -- exist, this field should be ignored (and may be NULL).
-  rev_content_format varbinary(64) DEFAULT NULL
+  rev_content_format varbinary(64) DEFAULT NULL,
+  
+  -- The remote wiki's page_id
+  rev_remote_page int unsigned,
+  
+  -- The remote wiki's page_namespace
+  rev_remote_namespace int,
+  
+  -- The remote wiki's page_title
+  rev_remote_title varchar(255) binary,
+  
+  -- The remote wiki's rev_id
+  rev_remote_rev int unsigned,
+  
+  -- The remote wiki's user_id
+  rev_remote_user int unsigned,
+  
+  -- The pushing user's user name
+  -- Not needed at the moment
+  -- rev_push_user_text varchar(255) binary default ''
 
 ) /*$wgDBTableOptions*/ MAX_ROWS=10000000 AVG_ROW_LENGTH=1024;
 -- In case tables are created as MyISAM, use row hints for MySQL <5.0 to avoid 4GB limit
@@ -439,6 +458,13 @@ CREATE INDEX /*i*/usertext_timestamp ON /*_*/revision (rev_user_text,rev_timesta
 -- in ApiQueryContributors. Also for ApiQueryRevisions if rvuser is specified
 -- and is a logged-in user.
 CREATE INDEX /*i*/page_user_timestamp ON /*_*/revision (rev_page,rev_user,rev_timestamp);
+
+-- Remote indexes
+-- Used to see, e.g., where each push user left off in the pushes
+-- Probably not worth the overhead when we can just use a file-based cursor
+-- CREATE INDEX /*i*/rev_push_user_text_rev_remote_rev ON /*_*/revision (rev_push_user_text, rev_remote_rev);
+-- Used to find the latest revision for a title
+CREATE INDEX /*i*/rev_remote_title_timestamp ON /*_*/revision (rev_remote_title,rev_timestamp);
 
 --
 -- Temporary table to avoid blocking on an alter of revision.

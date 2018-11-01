@@ -930,6 +930,8 @@ class SkinTemplate extends Skin {
 			// Gets page objects for the related namespaces
 			$subjectPage = $title->getSubjectPage();
 			$talkPage = $title->getTalkPage();
+			$revisionListPage =																# SD
+				Title::newFromText( 'Special:RevisionList/' . $title->getPrefixedText() );	# SD
 
 			// Determines if this is a talk page
 			$isTalk = $title->isTalkPage();
@@ -947,6 +949,7 @@ class SkinTemplate extends Skin {
 
 			// Adds namespace links
 			$subjectMsg = [ "nstab-$subjectId" ];
+			$revisionListMsg = [ "nstab-revisionlist" ];									# SD
 			if ( $subjectPage->isMainPage() ) {
 				array_unshift( $subjectMsg, 'mainpage-nstab' );
 			}
@@ -958,6 +961,11 @@ class SkinTemplate extends Skin {
 				$talkPage, [ "nstab-$talkId", 'talk' ], $isTalk && !$preventActiveTabs, '', $userCanRead
 			);
 			$content_navigation['namespaces'][$talkId]['context'] = 'talk';
+			$content_navigation['namespaces']['revisionlist'] = $this->tabAction(			# SD
+				$revisionListPage, [ "nstab-revisionlist", 'revisionlist' ],
+				false, '', $userCanRead														# SD
+			);																				# SD
+			$content_navigation['namespaces']['revisionlist']['context'] = 'subject';		# SD
 
 			if ( $userCanRead ) {
 				// Adds "view" view link
