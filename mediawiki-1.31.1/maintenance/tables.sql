@@ -427,7 +427,7 @@ CREATE TABLE /*_*/revision (
   rev_remote_rev int unsigned,
   
   -- The remote wiki's user_id
-  rev_remote_user int unsigned,
+  rev_remote_user int unsigned
   
   -- The pushing user's user name
   -- Not needed at the moment
