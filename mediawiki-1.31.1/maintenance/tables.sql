@@ -329,7 +329,13 @@ CREATE TABLE /*_*/page (
   page_content_model varbinary(32) DEFAULT NULL,
 
   -- Page content language
-  page_lang varbinary(35) DEFAULT NULL
+  page_lang varbinary(35) DEFAULT NULL,
+  
+  -- The remote wiki's page_namepsace
+  page_remote_namespace int,
+  
+  -- The remote wiki's page_title
+  page_remote_title varchar(255) binary
 ) /*$wgDBTableOptions*/;
 
 -- The title index. Care must be taken to always specify a namespace when
@@ -420,8 +426,8 @@ CREATE TABLE /*_*/revision (
   -- The remote wiki's page_namespace
   rev_remote_namespace int,
   
-  -- The remote wiki's page_title
-  rev_remote_title varchar(255) binary,
+  -- The remote wiki's prefixed page_title
+  rev_remote_pfx_title varchar(384) binary,
   
   -- The remote wiki's rev_id
   rev_remote_rev int unsigned,

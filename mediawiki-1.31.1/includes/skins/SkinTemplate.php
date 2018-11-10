@@ -961,11 +961,13 @@ class SkinTemplate extends Skin {
 				$talkPage, [ "nstab-$talkId", 'talk' ], $isTalk && !$preventActiveTabs, '', $userCanRead
 			);
 			$content_navigation['namespaces'][$talkId]['context'] = 'talk';
-			$content_navigation['namespaces']['revisionlist'] = $this->tabAction(			# SD
-				$revisionListPage, [ "nstab-revisionlist", 'revisionlist' ],
-				false, '', $userCanRead														# SD
-			);																				# SD
-			$content_navigation['namespaces']['revisionlist']['context'] = 'subject';		# SD
+			if ( $title->getNamespace() === NS_REVISION ) {
+				$content_navigation['namespaces']['revisionlist'] = $this->tabAction(			# SD
+					$revisionListPage, [ "nstab-revisionlist", 'revisionlist' ],
+					false, '', $userCanRead														# SD
+				);																				# SD
+				$content_navigation['namespaces']['revisionlist']['context'] = 'subject';		# SD
+			}
 
 			if ( $userCanRead ) {
 				// Adds "view" view link

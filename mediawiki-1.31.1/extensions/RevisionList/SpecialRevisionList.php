@@ -19,7 +19,7 @@ class SpecialRevisionList extends SpecialPage {
 		if ( $title->getNamespace() === NS_REVISION && $title->exists() ) {
 			$par = $dbr->selectField(
 				'revision',
-				'rev_remote_title',
+				'rev_remote_pfx_title',
 				array( 'rev_remote_rev' => $title->getDBkey() )
 			);
 		}
@@ -27,7 +27,7 @@ class SpecialRevisionList extends SpecialPage {
 			array( 'revision', 'tag_summary' ),
 			array( 'rev_id', 'rev_remote_rev', 'rev_timestamp', 'rev_user_text',
 				'rev_len',  'rev_comment', 'ts_tags' ),
-			array( 'rev_remote_title' => $par ),
+			array( 'rev_remote_pfx_title' => $par ),
 			__METHOD__,
 			array( 'ORDER BY' => 'rev_timestamp DESC', 'LIMIT' => 500 ),
 			array( 'tag_summary' => array( 'LEFT JOIN', array(

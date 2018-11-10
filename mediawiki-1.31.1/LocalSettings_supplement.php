@@ -1,6 +1,25 @@
 <?php
+wfLoadExtension( 'Scribunto' );
+$wgScribuntoDefaultEngine = 'luastandalone';
+
+define("NS_PORTAL", 100);
+define("NS_PORTAL_TALK", 101);
+define("NS_BOOK", 108);
+define("NS_BOOK_TALK", 109);
+define("NS_DRAFT", 118);
+define("NS_DRAFT_TALK", 119);
+define("NS_TIMEDTEXT", 710);
+define("NS_TIMEDTEXT_TALK", 711);
 define("NS_REVISION", 1000);
 define("NS_REVISION_TALK", 1001);
+$wgExtraNamespaces[NS_PORTAL] = "Revision";
+$wgExtraNamespaces[NS_PORTAL_TALK] = "Revision_talk";   # underscore required
+$wgExtraNamespaces[NS_BOOK] = "Book";
+$wgExtraNamespaces[NS_BOOK_TALK] = "Book_talk";   # underscore required
+$wgExtraNamespaces[NS_DRAFT] = "Draft";
+$wgExtraNamespaces[NS_DRAFT_TALK] = "Draft_talk";   # underscore required
+$wgExtraNamespaces[NS_TIMEDTEXT] = "TimedText";
+$wgExtraNamespaces[NS_TIMEDTEXT_TALK] = "TimedText_talk";   # underscore required
 $wgExtraNamespaces[NS_REVISION] = "Revision";
 $wgExtraNamespaces[NS_REVISION_TALK] = "Revision_talk";   # underscore required
 
@@ -17,11 +36,10 @@ function sdOnPageContentSaveComplete( $article, $user, $content, $summary,					#
 	global $wgSdRemoteRev;																	# SD
 	$dbw = wfGetDB( DB_MASTER );															# SD
 	$vars = array();																		# SD
+	$pageVars = array();																	# SD
 	if( isset( $wgSdTags ) ) {
 		$csvTags = '';
-		#$vars['rev_comment'] = 'grok';
 		$firstOne = true;
-		#$vars['rev_comment'] = $wgSdTags;
 		$wgSdTags = explode( '|', $wgSdTags );
 		foreach ( $wgSdTags as $wgSdTag ) {	
 			$dbw->insert(
@@ -56,9 +74,13 @@ function sdOnPageContentSaveComplete( $article, $user, $content, $summary,					#
 	}																						# SD
 	if( isset( $wgSdNamespace ) ) {															# SD
 		$vars['rev_remote_namespace'] = $wgSdNamespace;										# SD
+		$pageVars['page_remote_namespace'] = $wgSdNamespace;								# SD
 	}																						# SD
 	if( isset( $wgSdTitle ) ) {																# SD
-		$vars['rev_remote_title'] = $wgSdTitle;												# SD
+		$vars['rev_remote_pfx_title'] = $wgSdTitle;											# SD
+		$remoteTitle = Title::newFromText( $wgSdTitle );									# SD
+		$unprefixedTitle = $remoteTitle->getDBkey();										# SD
+		$pageVars['page_remote_title'] = $unprefixedTitle;									# SD
 	}																						# SD
 	if( isset( $wgSdPage ) ) {																# SD
 		$vars['rev_remote_page'] = $wgSdPage;												# SD
@@ -70,6 +92,9 @@ function sdOnPageContentSaveComplete( $article, $user, $content, $summary,					#
 		return true;																		# SD
 	}																						# SD
 	$dbw->update( 'revision', $vars, array( 'rev_id' => $revision->getId() ) );				# SD
+	if( $pageVars ) {																		# SD
+		$dbw->update( 'page', $pageVars, array( 'page_latest' => $revision->getId() ) );	# SD
+	}																						# SD
 	return true;																			# SD
 }																							# SD
 
@@ -82,7 +107,7 @@ function onInitializeArticleMaybeRedirect( &$title, &$request, &$ignoreRedirect,
 	$pageId = $dbr->selectField(
 		'revision',
 		'rev_page',
-		array( 'rev_remote_title' => $title->getPrefixedText() ),
+		array( 'rev_remote_pfx_title' => $title->getPrefixedText() ),
 		__METHOD__,
 		array( 'ORDER BY' => 'rev_timestamp DESC' )
 	);
@@ -104,7 +129,7 @@ function sdOnHtmlPageLinkRendererBegin( $linkRenderer, $target, &$text, &$extraA
 		$exists = $dbr->selectField(
 			'revision',
 			'rev_id',
-			array( 'rev_remote_title' => $nonUnderscored )
+			array( 'rev_remote_pfx_title' => $nonUnderscored )
 		);
 		
 		if ( $exists ) {
@@ -119,7 +144,7 @@ function sdOnHtmlPageLinkRendererBegin( $linkRenderer, $target, &$text, &$extraA
 }
 
 $wgHooks['SkinTemplateNavigation::Universal'][] = 'PurgeActionExtension::contentHook';
-class PurgeActionExtension{
+class PurgeActionExtension {
 	public static function contentHook( $skin, array &$content_actions ) {
 		global $wgRequest, $wgUser;
 		// Use getRelevantTitle if present so that this will work on some special pages
@@ -143,7 +168,7 @@ function onBeforeParserFetchTemplateAndtitle( $parser, $title, &$skip, &$id ) {
 	$revId = $dbr->selectField(
 		'revision',
 		'rev_id',
-		array( 'rev_remote_title' => $title->getPrefixedText() ),
+		array( 'rev_remote_pfx_title' => $title->getPrefixedText() ),
 		__METHOD__,
 		array( 'ORDER BY' => 'rev_timestamp DESC' )
 	);
@@ -159,4 +184,4 @@ $wgShowSQLErrors = true;
 $wgDebugDumpSql  = true;
 $wgShowDBErrorBacktrace = true;
 $wgShowExceptionDetails = true;
-$wgDebugLogFile = "$IP\error.log";
+$wgDebugLogFile = "$IP/error.log";
