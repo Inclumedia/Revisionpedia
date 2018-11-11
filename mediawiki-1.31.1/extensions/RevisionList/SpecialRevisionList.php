@@ -20,7 +20,7 @@ class SpecialRevisionList extends SpecialPage {
 			$par = $dbr->selectField(
 				'revision',
 				'rev_remote_pfx_title',
-				array( 'rev_remote_rev' => $title->getDBkey() )
+				array( 'rev_remote_rev' => $title->getDBkey() ) # Use page_title instead, since it's already indexed?
 			);
 		}
 		$res = $dbr->select(

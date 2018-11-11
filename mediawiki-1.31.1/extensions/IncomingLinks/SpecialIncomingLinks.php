@@ -20,19 +20,20 @@ class SpecialIncomingLinks extends SpecialPage {
 			$par = $dbr->selectField(
 				'revision',
 				'rev_remote_pfx_title',
-				array( 'rev_remote_rev' => $title->getDBkey() )
+				array( 'rev_remote_rev' => $title->getDBkey() ) # Use page_title instead, since it's already indexed?
 			);
 		}
 		$res = $dbr->select(
+			# TODO: Add revision to this
 			array( 'pagelinks', 'page' ),
-			array( 'page_title', 'page_remote_namespace', 'page_remote_title' ),
+			array( 'page_title', 'page_remote_namespace', 'page_remote_title' ), # TODO: Use revision fields
 			array(
 				'pl_namespace' => $title->getNamespace(),
 				'pl_title' => $title->getDBkey(),
 				'page_namespace' => NS_REVISION
 			),
 			__METHOD__,
-			array(
+			array( # TODO: Change this to use rev_remote_pfx_title, rev_timestamp, which are already indexed
 				array( 'ORDER BY' => 'page_remote_namespace ASC, page_remote_remote_title ASC, page_title ASC' ),
 				array( 'LIMIT' => 500 )
 			), array( 'page' => array( 'INNER JOIN', array(

@@ -470,7 +470,7 @@ CREATE INDEX /*i*/page_user_timestamp ON /*_*/revision (rev_page,rev_user,rev_ti
 -- Probably not worth the overhead when we can just use a file-based cursor
 -- CREATE INDEX /*i*/rev_push_user_text_rev_remote_rev ON /*_*/revision (rev_push_user_text, rev_remote_rev);
 -- Used to find the latest revision for a title
-CREATE INDEX /*i*/rev_remote_title_timestamp ON /*_*/revision (rev_remote_title,rev_timestamp);
+CREATE INDEX /*i*/rev_remote_pfx_title_timestamp ON /*_*/revision (rev_remote_pfx_title,rev_timestamp);
 
 --
 -- Temporary table to avoid blocking on an alter of revision.
