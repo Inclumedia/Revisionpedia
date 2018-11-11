@@ -12,5 +12,5 @@ $specialPageAliases = [];
  * @author Leucosticte
  */
 $specialPageAliases['en'] = [
-	'RevisionList' => [ 'RevisionList', 'Revision list' ]
+	'RevisionList' => [ 'RevisionList' ]
 ];

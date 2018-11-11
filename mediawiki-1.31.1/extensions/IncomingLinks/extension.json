@@ -1,0 +1,26 @@
+{
+	"name": "Incoming Links",
+	"version": "1.1.0",
+	"author": [
+		"Leucosticte"
+	],
+	"url": "https://www.mediawiki.org/wiki/Extension:IncomingLinks",
+	"description": "Gives a list of incoming links",
+	"license-name": "GPL",
+	"type": "specialpage",
+	"AutoloadClasses": {
+		"SpecialIncomingLinks": "SpecialIncomingLinks.php"
+	},
+	"SpecialPages": {
+		"IncomingLinks": "SpecialIncomingLinks"
+	},
+	"ExtensionMessagesFiles": {
+		"IncomingLinksAlias": "i18n/IncomingLinks.i18n.alias.php"
+	},
+	"MessagesDirs": {
+		"IncomingLinks": [
+			"i18n"
+		]
+	},
+	"manifest_version": 1
+}

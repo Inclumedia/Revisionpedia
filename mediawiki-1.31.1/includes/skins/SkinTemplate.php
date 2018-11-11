@@ -963,7 +963,7 @@ class SkinTemplate extends Skin {
 			$content_navigation['namespaces'][$talkId]['context'] = 'talk';
 			if ( $title->getNamespace() === NS_REVISION ) {
 				$content_navigation['namespaces']['revisionlist'] = $this->tabAction(			# SD
-					$revisionListPage, [ "nstab-revisionlist", 'revisionlist' ],
+					$revisionListPage, [ "nstab-revisionlist", 'revisionlist' ],				# SD
 					false, '', $userCanRead														# SD
 				);																				# SD
 				$content_navigation['namespaces']['revisionlist']['context'] = 'subject';		# SD

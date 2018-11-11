@@ -162,6 +162,29 @@ class PurgeActionExtension {
 	}
 }
 
+$wgHooks['SkinTemplateNavigation::Universal'][] = 'IncomingActionExtension::contentHook';
+class IncomingActionExtension {
+	public static function contentHook( $skin, array &$content_actions ) {
+		global $wgRequest, $wgUser;
+		// Use getRelevantTitle if present so that this will work on some special pages
+		$title = method_exists( $skin, 'getRelevantTitle' ) ?
+			$skin->getRelevantTitle() : $skin->getTitle();
+		if ( $title->getNamespace() !== NS_REVISION ) {
+			return true;
+		}
+		if ( $title->getNamespace() !== NS_SPECIAL && $wgUser->isAllowed( 'purge' ) ) {
+			$action = $wgRequest->getText( 'action' );
+			$specialTitle = Title::newFromText( 'Special:IncomingLinks/' . $title->getPrefixedText() );
+			$content_actions['actions']['incoming'] = array(
+				'class' => false,
+				'text' => 'Incoming',
+				'href' => $specialTitle->getLocalUrl()
+			);
+		}
+		return true;
+	}
+}
+
 $wgHooks['BeforeParserFetchTemplateAndtitle'][] = 'onBeforeParserFetchTemplateAndtitle';
 function onBeforeParserFetchTemplateAndtitle( $parser, $title, &$skip, &$id ) {
 	$dbr = wfGetDB( DB_REPLICA );

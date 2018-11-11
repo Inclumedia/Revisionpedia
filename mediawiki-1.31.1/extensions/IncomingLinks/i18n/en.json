@@ -1,0 +1,10 @@
+{
+    "@metadata": {
+        "authors": [
+            "Leucosticte"
+        ]
+    },
+    "incominglinks": "Incoming links",
+	"incominglinks-desc": "Provides a list of incoming links.",
+	"incominglinks-summary": "On this special page, get a list of incoming links."
+}

@@ -6,5 +6,5 @@
     },
     "revisionlist": "Revision list",
 	"revisionlist-desc": "Provides a revision list.",
-	"myextension-summary": "On this special page, get a list of revisions."
+	"revisionlist-summary": "On this special page, get a list of revisions."
 }
