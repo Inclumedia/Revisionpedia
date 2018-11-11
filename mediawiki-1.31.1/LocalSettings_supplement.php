@@ -77,10 +77,9 @@ function sdOnPageContentSaveComplete( $article, $user, $content, $summary,					#
 		$pageVars['page_remote_namespace'] = $wgSdNamespace;								# SD
 	}																						# SD
 	if( isset( $wgSdTitle ) ) {																# SD
-		$vars['rev_remote_pfx_title'] = $wgSdTitle;											# SD
 		$remoteTitle = Title::newFromText( $wgSdTitle );									# SD
 		$unprefixedTitle = $remoteTitle->getDBkey();										# SD
-		$pageVars['page_remote_title'] = $unprefixedTitle;									# SD
+		$vars['rev_remote_title'] = $unprefixedTitle;										# SD
 	}																						# SD
 	if( isset( $wgSdPage ) ) {																# SD
 		$vars['rev_remote_page'] = $wgSdPage;												# SD
@@ -92,12 +91,10 @@ function sdOnPageContentSaveComplete( $article, $user, $content, $summary,					#
 		return true;																		# SD
 	}																						# SD
 	$dbw->update( 'revision', $vars, array( 'rev_id' => $revision->getId() ) );				# SD
-	if( $pageVars ) {																		# SD
-		$dbw->update( 'page', $pageVars, array( 'page_latest' => $revision->getId() ) );	# SD
-	}																						# SD
 	return true;																			# SD
 }																							# SD
 
+# Does this work?
 $wgHooks['InitializeArticleMaybeRedirect'][] = 'onInitializeArticleMaybeRedirect';
 function onInitializeArticleMaybeRedirect( &$title, &$request, &$ignoreRedirect, &$target, &$article ) {
 	if ( $title->getNamespace() !== 0 ) {
@@ -107,8 +104,10 @@ function onInitializeArticleMaybeRedirect( &$title, &$request, &$ignoreRedirect,
 	$pageId = $dbr->selectField(
 		'revision',
 		'rev_page',
-		array( 'rev_remote_pfx_title' => $title->getPrefixedText() ),
-		__METHOD__,
+		array(
+			  'rev_remote_namespace' => $title->getNamespace(),
+			  'rev_remote_title' => $title->getDBkey()
+		), __METHOD__,
 		array( 'ORDER BY' => 'rev_timestamp DESC' )
 	);
 	if ( !$pageId ) {
@@ -124,18 +123,21 @@ function sdOnHtmlPageLinkRendererBegin( $linkRenderer, $target, &$text, &$extraA
 	&$ret ) {
 	$title = Title::newFromLinkTarget( $target );
 	$dbr = wfGetDB( DB_REPLICA );
-	$nonUnderscored = str_replace( '_', ' ', $title->getPrefixedText() );
+	#$nonUnderscored = str_replace( '_', ' ', $title->getPrefixedText() );
 	if ( !$title->isKnown() ) {
 		$exists = $dbr->selectField(
 			'revision',
 			'rev_id',
-			array( 'rev_remote_pfx_title' => $nonUnderscored )
+			array(
+				'rev_remote_namespace' => $title->getNamespace(),
+				'rev_remote_title' => $title->getDBkey()
+			)
 		);
 		
 		if ( $exists ) {
 			$html = HtmlArmor::getHtml( $text );
-			$newTitle = Title::newFromText( $title->getPrefixedText() );
-			$extraAttribs['href'] = $newTitle->getCanonicalURL();
+			#$newTitle = Title::newFromText( $title->getPrefixedText() );
+			$extraAttribs['href'] = $title->getCanonicalURL();
 			$ret = Html::rawElement( 'a', $extraAttribs, $html );
 			return false;
 		}
@@ -185,14 +187,17 @@ class IncomingActionExtension {
 	}
 }
 
+# Does this even work or do anything useful?
 $wgHooks['BeforeParserFetchTemplateAndtitle'][] = 'onBeforeParserFetchTemplateAndtitle';
 function onBeforeParserFetchTemplateAndtitle( $parser, $title, &$skip, &$id ) {
 	$dbr = wfGetDB( DB_REPLICA );
 	$revId = $dbr->selectField(
 		'revision',
 		'rev_id',
-		array( 'rev_remote_pfx_title' => $title->getPrefixedText() ),
-		__METHOD__,
+		array(
+			  'rev_remote_namespace' => $title->getNamespace(),
+			  'rev_remote_title' => $title->getDBkey(),
+		), __METHOD__,
 		array( 'ORDER BY' => 'rev_timestamp DESC' )
 	);
 	if ( !$revId ) {

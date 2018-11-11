@@ -329,13 +329,8 @@ CREATE TABLE /*_*/page (
   page_content_model varbinary(32) DEFAULT NULL,
 
   -- Page content language
-  page_lang varbinary(35) DEFAULT NULL,
-  
-  -- The remote wiki's page_namepsace
-  page_remote_namespace int,
-  
-  -- The remote wiki's page_title
-  page_remote_title varchar(255) binary
+  page_lang varbinary(35) DEFAULT NULL
+
 ) /*$wgDBTableOptions*/;
 
 -- The title index. Care must be taken to always specify a namespace when
@@ -426,8 +421,8 @@ CREATE TABLE /*_*/revision (
   -- The remote wiki's page_namespace
   rev_remote_namespace int,
   
-  -- The remote wiki's prefixed page_title
-  rev_remote_pfx_title varchar(384) binary,
+  -- The remote wiki's page_title
+  rev_remote_title varchar(255) binary,
   
   -- The remote wiki's rev_id
   rev_remote_rev int unsigned,
@@ -466,11 +461,9 @@ CREATE INDEX /*i*/usertext_timestamp ON /*_*/revision (rev_user_text,rev_timesta
 CREATE INDEX /*i*/page_user_timestamp ON /*_*/revision (rev_page,rev_user,rev_timestamp);
 
 -- Remote indexes
--- Used to see, e.g., where each push user left off in the pushes
--- Probably not worth the overhead when we can just use a file-based cursor
--- CREATE INDEX /*i*/rev_push_user_text_rev_remote_rev ON /*_*/revision (rev_push_user_text, rev_remote_rev);
+
 -- Used to find the latest revision for a title
-CREATE INDEX /*i*/rev_remote_pfx_title_timestamp ON /*_*/revision (rev_remote_pfx_title,rev_timestamp);
+CREATE INDEX /*i*/rev_remote_namespace_title_timestamp ON /*_*/revision (rev_remote_namespace,rev_remote_title,rev_timestamp);
 
 --
 -- Temporary table to avoid blocking on an alter of revision.

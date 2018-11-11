@@ -13,22 +13,28 @@ class SpecialRevisionList extends SpecialPage {
 			$output->addWikiText( 'Please use a parameter' );
 			return;
 		}
-		$par = str_replace( '_', ' ', $par );
+		#$par = str_replace( '_', ' ', $par );
 		$dbr = wfGetDB( DB_REPLICA );
 		$title = Title::newFromText( $par );
 		if ( $title->getNamespace() === NS_REVISION && $title->exists() ) {
-			$par = $dbr->selectField(
+			$row = $dbr->selectRow(
 				'revision',
-				'rev_remote_pfx_title',
-				array( 'rev_remote_rev' => $title->getDBkey() ) # Use page_title instead, since it's already indexed?
+				array( 'rev_remote_namespace', 'rev_remote_title' ),
+				array( 'rev_page' => $title->getArticleID() )
 			);
+			$remoteTitleValue = new TitleValue( intval( $row->rev_remote_namespace), $row->rev_remote_title );
+			$remoteTitle = Title::newFromTitleValue( $remoteTitleValue );
+			$par = $remoteTitle->getPrefixedText();
+			$title = Title::newFromText( $par );
 		}
 		$res = $dbr->select(
 			array( 'revision', 'tag_summary' ),
 			array( 'rev_id', 'rev_remote_rev', 'rev_timestamp', 'rev_user_text',
 				'rev_len',  'rev_comment', 'ts_tags' ),
-			array( 'rev_remote_pfx_title' => $par ),
-			__METHOD__,
+			array(
+				'rev_remote_namespace' => $title->getNamespace(),
+				'rev_remote_title' => $title->getDBkey()
+			), __METHOD__,
 			array( 'ORDER BY' => 'rev_timestamp DESC', 'LIMIT' => 500 ),
 			array( 'tag_summary' => array( 'LEFT JOIN', array(
 				'rev_id=ts_rev_id' ) ) )

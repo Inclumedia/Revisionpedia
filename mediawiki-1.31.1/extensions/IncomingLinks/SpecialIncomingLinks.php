@@ -17,43 +17,60 @@ class SpecialIncomingLinks extends SpecialPage {
 		$dbr = wfGetDB( DB_REPLICA );
 		$title = Title::newFromText( $par );
 		if ( $title->getNamespace() === NS_REVISION && $title->exists() ) {
-			$par = $dbr->selectField(
+			$row = $dbr->selectRow(
 				'revision',
-				'rev_remote_pfx_title',
-				array( 'rev_remote_rev' => $title->getDBkey() ) # Use page_title instead, since it's already indexed?
+				array( 'rev_remote_namespace', 'rev_remote_title' ),
+				array( 'rev_page' => $title->getArticleID() )
 			);
+			$remoteTitleValue = new TitleValue( intval( $row->rev_remote_namespace) , $row->rev_remote_title );
+			$remoteTitle = Title::newFromTitleValue( $remoteTitleValue );
+			$par = $remoteTitle->getPrefixedText();
+			$title = Title::newFromText( $par );
 		}
 		$res = $dbr->select(
-			# TODO: Add revision to this
-			array( 'pagelinks', 'page' ),
-			array( 'page_title', 'page_remote_namespace', 'page_remote_title' ), # TODO: Use revision fields
+			array( 'pagelinks', 'revision', 'tag_summary' ),
+			array( 'rev_id', 'rev_remote_rev', 'rev_timestamp', 'rev_user_text',
+				'rev_len',  'rev_comment', 'rev_remote_namespace', 'rev_remote_title', 'ts_tags' ),
 			array(
 				'pl_namespace' => $title->getNamespace(),
-				'pl_title' => $title->getDBkey(),
-				'page_namespace' => NS_REVISION
+				'pl_title' => $title->getDBkey()
 			),
 			__METHOD__,
-			array( # TODO: Change this to use rev_remote_pfx_title, rev_timestamp, which are already indexed
-				array( 'ORDER BY' => 'page_remote_namespace ASC, page_remote_remote_title ASC, page_title ASC' ),
+			array(
+				array( 'ORDER BY' => 'rev_remote_namespace ASC, rev_remote_remote_title ASC, rev_timestamp DESC' ),
 				array( 'LIMIT' => 500 )
-			), array( 'page' => array( 'INNER JOIN', array(
-				'pl_from=page_id'
+			), array( 'revision' => array( 'INNER JOIN', array(
+				'pl_from=rev_page'
+			) ), 'tag_summary' => array( 'LEFT JOIN', array(
+				'rev_id=ts_rev_id' 
 			) ) )
 		);
 		$wikitext = "==[[$par]]==\n";
 		$empty = true;
-		$previousTitle = '';
+		$previousTitleText = '';
 		foreach ( $res as $row ) {
 			$empty = false;
-			#die ( $row->pl_from );
-			#die ( $row->page_remote_namespace );
-			$titleValue = new TitleValue( intval( $row->page_remote_namespace ), $row->page_remote_title );
-			#die('foo');
+			$titleValue = new TitleValue( intval( $row->rev_remote_namespace ), $row->rev_remote_title );
 			$title = Title::newFromTitleValue( $titleValue );
-			if ( $title != $previousTitle ) {
-				$wikitext .= '*[[' . $title->getPrefixedText() . "]]\n";
+			$titleText = $title->getPrefixedText();
+			if ( $titleText != $previousTitleText ) {
+				if ( $previousTitleText ) {
+					$wikitext .= "|-\n";
+				}
+				$wikitext .= '===[[' . $titleText . "]]===\n";
+				$wikitext .= '{| class=' . '"' . 'wikitable' . '"' ."\n|-\n"
+					. "!Date/time\n!User\n!Length\n!Comment\n!Tags\n";
 			}
-			$wikitext .= ':*[[Revision:' . $row->page_title . "]]\n";
+			$wikitext .= "|-\n";
+			$wikitext .= "|[[Revision:" . $row->rev_remote_rev . '|' . $row->rev_timestamp . "]]\n";
+			$wikitext .= "|[[User:" . $row->rev_user_text . '|' . $row->rev_user_text . "]]" .
+				' <sup>([[User talk:' .
+				$row->rev_user_text . "|Talk]]) ([[Special:Contributions/" .
+				$row->rev_user_text . "|Contribs]])</sup>\n";
+			$wikitext .= "|" . $row->rev_len . "\n";
+			$wikitext .= "|" . $row->rev_comment . "\n";
+			$wikitext .= "|" . $row->ts_tags . "\n";
+			$previousTitleText = $titleText;
 		}
 		if ( $empty ) {
 			$output->addWikiText( "No incoming links to page '''[[$par]]'''" . " were found" );
