@@ -39,6 +39,9 @@ class ApiEditPage extends ApiBase {
 		global $wgSdTags;			# SD
 		global $wgSdPage;			# SD
 		global $wgSdRemoteRev;		# SD
+		global $wgSdDeleted;		# SD
+		global $wgSdSize;			# SD
+		global $wgTouched;
 		$this->useTransactionalTimeLimit();
 
 		$user = $this->getUser();
@@ -65,27 +68,25 @@ class ApiEditPage extends ApiBase {
 		if ( isset( $params['page'] ) ) {								# SD
 			$wgSdPage = $params['page'];								# SD
 		}																# SD
-		
+		if ( isset( $params['deleted'] ) ) {							# SD
+			$wgSdDeleted = $params['deleted'];							# SD
+		}																# SD
+		if ( isset( $params['size'] ) ) {								# SD
+			$wgSdSize = $params['size'];								# SD
+		}																# SD
 		if ( isset( $params['remoterev'] ) ) {							# SD
 			$wgSdRemoteRev = $params['remoterev'];						# SD
-			$dbw = wfGetDB( DB_MASTER );								# SD
-			$field = $dbw->selectField(									# SD
-				'revision',												# SD
-				'rev_remote_rev',										# SD
-				array( 'rev_remote_rev' => $params['remoterev'] )		# SD
-			);															# SD
-			// If it's already in the database, abort					# SD
-			if ( $field ) {												# SD
-				$this->dieUsage( 'The edit was already saved',			# SD
-					'edit-already-saved' );								# SD
-				return;													# SD
-			}															# SD
 		}																# SD
 
 		$this->requireAtLeastOneParameter( $params, 'text', 'appendtext', 'prependtext', 'undo' );
 
 		$pageObj = $this->getTitleOrPageId( $params );
 		$titleObj = $pageObj->getTitle();
+		if ( $params['remotetitle'] ) {									# SD
+			$remoteTitleValue = new TitleValue ( $params['namespace'],
+				str_replace( ' ', '_', $params['remotetitle'] ) );
+			$remoteTitle = Title::newFromTitleValue ( $remoteTitleValue );
+		}
 		$apiResult = $this->getResult();
 
 		if ( $params['redirect'] ) {
@@ -164,6 +165,100 @@ class ApiEditPage extends ApiBase {
 			$titleObj,
 			$titleObj->exists() ? 'edit' : [ 'edit', 'create' ]
 		);
+		
+		# Update text, comments, user if they have changed
+		if ( $titleObj->exists() && $titleObj->getNamespace() == NS_REVISION ) {				# SD
+			$dbw = wfGetDB( DB_MASTER );														# SD
+			$row = $dbw->selectRow(																# SD
+				'revision',																		# SD
+				array( 'rev_id', 'rev_deleted', 'rev_comment', 'rev_user', 'rev_user_text',		# SD
+					  'rev_text_id', 'rev_len', 'rev_remote_namespace', 'rev_remote_title' ),	# SD
+				array( 'rev_remote_rev' => $params['remoterev'] )								# SD
+			);																					# SD
+			// If we had no text before, e.g. because it was hidden before, now let's see if	# SD
+			// we have it; if so, update														# SD
+			if ( $row->rev_len == 0 && strlen( params['text'] ) > 0 ) {							# SD
+				$dbw->update(																	# SD
+					'text',																		# SD
+					array( 'old_text' => $params['text'] ),										# SD
+					array( 'old_id' => $row->rev_text_id )										# SD
+				);																				# SD
+			}																					# SD
+			$vars = array();																	# SD
+			// If the page_deleted changed, .g. due to a page move, update that					# SD
+			if ( $params['deleted'] != $row->rev_deleted ) {									# SD
+				$vars['rev_deleted'] = $params['deleted'];										# SD
+			}																					# SD
+			// If the page_namespace changed, e.g. due to a page move, update that				# SD
+			if ( $params['namespace'] != $row->rev_remote_namespace ) {							# SD
+				$vars['rev_remote_namespace'] = $params['namespace'];							# SD
+			}																					# SD
+			// If the page_title changed, e.g. due to a page move, update that					# SD
+			if ( $remoteTitle->getDBkey() != $row->rev_remote_title ) {							# SD
+				$vars['rev_remote_title'] = $remoteTitle->getDBkey();							# SD
+			}																					# SD
+			if ( $params['userid'] && $params['userid'] != $row->rev_user ) {					# SD
+				$vars['rev_user'] = $params['userid'];											# SD
+			}																					# SD
+			// If user_id changed to something other than 0, e.g. because it was hidden			# SD
+			// before, let's update that														# SD
+			if ( $params['userid'] && $params['userid'] != $row->rev_user ) {					# SD
+				$vars['rev_user'] = $params['userid'];											# SD
+			}																					# SD
+			// If username changed to something other than 0, e.g. because it was hidden		# SD
+			// before or the user was renamed, let's update that								# SD
+			if ( $params['user'] && $params['user'] != $row->rev_user_text ) {					# SD
+				$vars['rev_user_text'] = $params['user'];										# SD
+			}																					# SD
+			// If username changed to something other than blank, e.g. because it was hidden	# SD
+			// before or the user was renamed, let's update that								# SD
+			// TODO: At some point, figure out how to involve the comment table in this			# SD
+			if ( $params['summary'] && $params['summary'] != $row->rev_comment ) {				# SD
+				$vars['rev_comment'] = $params['summary'];										# SD
+			}																					# SD
+			if ( $vars ) {																		# SD
+				$dbw->update(																	# SD
+					'revision',																	# SD
+					$vars,																		# SD
+					array( 'rev_remote_rev' => $params['remoterev'] )							# SD
+				);																				# SD
+			}																					# SD
+			$r['result'] = 'Success';															# SD
+			$return;																			# SD
+		}																						# SD
+		
+		// See if we have any other pages with this title										# SD
+		/*if ( $params['remoterev'] ) {															# SD
+			$dbw = wfGetDB( DB_MASTER );														# SD
+			$field = $dbw->selectField(
+				'revision',
+				'rev_id',
+				array(
+					'rev_remote_namespace' => $params['namespace'],
+					'rev_remote_title' => $remoteTitle->getDBkey()
+				)
+			);
+			if ( !$field ) { // This is a new page; touch all pages that link to it
+				$res = $dbw->select(
+					array( 'pagelinks' ),
+					array( 'pl_from' ),
+					array(
+						'pl_namespace' => $params['namespace'],
+						'pl_title' => $remoteTitle->getDBkey()
+					)
+				);
+				#$touched = $dbw->timestamp();
+				$touched = '20181113025537';
+				$wgSdTouched = $touched;
+				foreach ( $res as $row ) {
+					$dbw->update(
+						'page',
+						array( 'page_touched' => $touched ),
+						array( 'page_id' => $row->pl_from )
+					);
+				}
+			}
+		}*/
 
 		$toMD5 = $params['text'];
 		if ( !is_null( $params['appendtext'] ) || !is_null( $params['prependtext'] ) ) {
@@ -662,6 +757,12 @@ class ApiEditPage extends ApiBase {
 				ApiBase::PARAM_TYPE => 'text'			# SD
 			],											# SD
 			'remoterev' => [							# SD
+				ApiBase::PARAM_TYPE => 'integer'		# SD
+			],											# SD
+			'deleted' => [								# SD
+				ApiBase::PARAM_TYPE => 'integer'		# SD
+			],											# SD
+			'size' => [									# SD
 				ApiBase::PARAM_TYPE => 'integer'		# SD
 			],
 			'token' => [

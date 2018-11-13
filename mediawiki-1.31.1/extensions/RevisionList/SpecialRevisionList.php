@@ -30,7 +30,7 @@ class SpecialRevisionList extends SpecialPage {
 		$res = $dbr->select(
 			array( 'revision', 'tag_summary' ),
 			array( 'rev_id', 'rev_remote_rev', 'rev_timestamp', 'rev_user_text',
-				'rev_len',  'rev_comment', 'ts_tags' ),
+				'rev_len',  'rev_comment', 'rev_deleted', 'ts_tags' ),
 			array(
 				'rev_remote_namespace' => $title->getNamespace(),
 				'rev_remote_title' => $title->getDBkey()
@@ -66,14 +66,29 @@ class SpecialRevisionList extends SpecialPage {
 		}
 		foreach ( $res as $row ) {
 			$empty = false;
-			$wikitext .= "|-\n";
-			$wikitext .= "|[[Revision:" . $row->rev_remote_rev . '|' . $row->rev_timestamp . "]]\n";
-			$wikitext .= "|[[User:" . $row->rev_user_text . '|' . $row->rev_user_text . "]]" .
-				' <sup>([[User talk:' .
-				$row->rev_user_text . "|Talk]]) ([[Special:Contributions/" .
-				$row->rev_user_text . "|Contribs]])</sup>\n";
+			$wikitext .= "|-\n|";
+			if ( $row->rev_deleted & (1 << 0) ) {
+				$wikitext .= '<s>';
+			}
+			$wikitext .= "[[Revision:" . $row->rev_remote_rev . '|' . $row->rev_timestamp . "]]";
+			if ( $row->rev_deleted & (1 << 0) ) {
+				$wikitext .= '</s>';
+			}
+			$wikitext .= "\n";
+			if ( $row->rev_deleted & (1 << 2) ) {
+				$wikitext .= "|<s>''(Username or IP removed)‎''</s>\n";
+			} else {
+				$wikitext .= "|[[User:" . $row->rev_user_text . '|' . $row->rev_user_text . "]]" .
+					' <sup>([[User talk:' .
+					$row->rev_user_text . "|Talk]]) ([[Special:Contributions/" .
+					$row->rev_user_text . "|Contribs]])</sup>\n";
+			}
 			$wikitext .= "|" . $lengths[$row->rev_id] . "\n";
-			$wikitext .= "|" . $row->rev_comment . "\n";
+			if ( $row->rev_deleted & (1 << 1) ) {
+				$wikitext .= "|<s>''(Edit summary removed)''</s>\n";
+			} else {
+				$wikitext .= "|" . $row->rev_comment . "\n";
+			}
 			$wikitext .= "|" . $row->ts_tags . "\n";
 		}
 		if ( $empty ) {

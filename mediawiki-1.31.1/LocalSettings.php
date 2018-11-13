@@ -141,7 +141,8 @@ wfLoadExtension( 'ParserFunctions' );
 wfLoadExtension( 'Poem' );
 wfLoadExtension( 'RevisionList' );
 wfLoadExtension( 'SyntaxHighlight_GeSHi' );
-
+wfLoadExtension( 'Scribunto' );
+$wgScribuntoDefaultEngine = 'luastandalone';
 
 # End of automatically generated settings.
 # Add more configuration options below.

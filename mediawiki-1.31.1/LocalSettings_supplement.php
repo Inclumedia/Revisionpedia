@@ -1,7 +1,4 @@
 <?php
-wfLoadExtension( 'Scribunto' );
-$wgScribuntoDefaultEngine = 'luastandalone';
-
 define("NS_PORTAL", 100);
 define("NS_PORTAL_TALK", 101);
 define("NS_BOOK", 108);
@@ -34,6 +31,9 @@ function sdOnPageContentSaveComplete( $article, $user, $content, $summary,					#
 	global $wgSdPage;																		# SD
 	global $wgSdTags;																		# SD
 	global $wgSdRemoteRev;																	# SD
+	global $wgSdDeleted;																	# SD
+	global $wgSdSize;																		# SD
+	global $wgTouched;
 	$dbw = wfGetDB( DB_MASTER );															# SD
 	$vars = array();																		# SD
 	$pageVars = array();																	# SD
@@ -74,7 +74,7 @@ function sdOnPageContentSaveComplete( $article, $user, $content, $summary,					#
 	}																						# SD
 	if( isset( $wgSdNamespace ) ) {															# SD
 		$vars['rev_remote_namespace'] = $wgSdNamespace;										# SD
-		$pageVars['page_remote_namespace'] = $wgSdNamespace;								# SD
+		#$pageVars['page_remote_namespace'] = $wgSdNamespace;								# SD
 	}																						# SD
 	if( isset( $wgSdTitle ) ) {																# SD
 		$remoteTitle = Title::newFromText( $wgSdTitle );									# SD
@@ -87,11 +87,21 @@ function sdOnPageContentSaveComplete( $article, $user, $content, $summary,					#
 	if( isset( $wgSdRemoteRev ) ) {															# SD
 		$vars['rev_remote_rev'] = $wgSdRemoteRev;											# SD
 	}																						# SD
+	if( isset( $wgTouched ) ) {															# SD
+		$pageVars['page_touched'] = $wgTouched;											# SD
+	}																						# SD
+	if( isset( $wgSdDeleted ) ) {															# SD
+		$vars['rev_deleted'] = $wgSdDeleted;												# SD
+		$vars['rev_len'] = $wgSdSize;														# SD
+	}																						# SD
 	if ( !$vars ) {																			# SD
 		return true;																		# SD
 	}																						# SD
 	$dbw->update( 'revision', $vars, array( 'rev_id' => $revision->getId() ) );				# SD
-	return true;																			# SD
+	/*if ( $pageVars ) {
+		$dbw->update( 'page', $pageVars, array( 'page_id' => $revision->getPage() ) );				# SD
+	}
+	return true;																			# SD*/
 }																							# SD
 
 # Does this work?
@@ -208,8 +218,11 @@ function onBeforeParserFetchTemplateAndtitle( $parser, $title, &$skip, &$id ) {
 	return;
 }
 
+
+$wgGroupPermissions['sysop']['deleterevision'] = true;
+
 $wgShowSQLErrors = true;
 $wgDebugDumpSql  = true;
 $wgShowDBErrorBacktrace = true;
 $wgShowExceptionDetails = true;
-$wgDebugLogFile = "$IP/error.log";
+$wgDebugLogFile = "/var/www/html/error.log";

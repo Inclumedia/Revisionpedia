@@ -462,7 +462,10 @@ CREATE INDEX /*i*/page_user_timestamp ON /*_*/revision (rev_page,rev_user,rev_ti
 
 -- Remote indexes
 
--- Used to find the latest revision for a title
+-- Used by ApiEditPage
+CREATE INDEX /*i*/rev_remote_rev ON /*_*/revision (rev_remote_rev);
+
+-- Used by, e.g., Special:RevisionList to find the latest revision for a title
 CREATE INDEX /*i*/rev_remote_namespace_title_timestamp ON /*_*/revision (rev_remote_namespace,rev_remote_title,rev_timestamp);
 
 --
