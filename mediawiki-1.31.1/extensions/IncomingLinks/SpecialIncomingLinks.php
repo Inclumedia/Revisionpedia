@@ -22,7 +22,7 @@ class SpecialIncomingLinks extends SpecialPage {
 				array( 'rev_remote_namespace', 'rev_remote_title' ),
 				array( 'rev_page' => $title->getArticleID() )
 			);
-			$remoteTitleValue = new TitleValue( intval( $row->rev_remote_namespace) , $row->rev_remote_title );
+			$remoteTitleValue = new TitleValue( $row->rev_remote_title, intval( $row->rev_remote_namespace) );
 			$remoteTitle = Title::newFromTitleValue( $remoteTitleValue );
 			$par = $remoteTitle->getPrefixedText();
 			$title = Title::newFromText( $par );

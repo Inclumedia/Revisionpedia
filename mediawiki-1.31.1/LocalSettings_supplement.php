@@ -19,6 +19,7 @@ $wgExtraNamespaces[NS_TIMEDTEXT] = "TimedText";
 $wgExtraNamespaces[NS_TIMEDTEXT_TALK] = "TimedText_talk";   # underscore required
 $wgExtraNamespaces[NS_REVISION] = "Revision";
 $wgExtraNamespaces[NS_REVISION_TALK] = "Revision_talk";   # underscore required
+$wgSdUseTouch = false;
 
 $wgHooks['PageContentSaveComplete'][] = 'sdOnPageContentSaveComplete';						# SD
 function sdOnPageContentSaveComplete( $article, $user, $content, $summary,					# SD
@@ -33,7 +34,8 @@ function sdOnPageContentSaveComplete( $article, $user, $content, $summary,					#
 	global $wgSdRemoteRev;																	# SD
 	global $wgSdDeleted;																	# SD
 	global $wgSdSize;																		# SD
-	global $wgTouched;
+	global $wgSdTouch;																		# SD
+	global $wgSdUseTouch;
 	$dbw = wfGetDB( DB_MASTER );															# SD
 	$vars = array();																		# SD
 	$pageVars = array();																	# SD
@@ -87,9 +89,9 @@ function sdOnPageContentSaveComplete( $article, $user, $content, $summary,					#
 	if( isset( $wgSdRemoteRev ) ) {															# SD
 		$vars['rev_remote_rev'] = $wgSdRemoteRev;											# SD
 	}																						# SD
-	if( isset( $wgTouched ) ) {															# SD
-		$pageVars['page_touched'] = $wgTouched;											# SD
-	}																						# SD
+	/*if( isset( $wgTouched ) ) {																# SD
+		$pageVars['page_touched'] = $wgTouched;												# SD
+	}																						# SD*/
 	if( isset( $wgSdDeleted ) ) {															# SD
 		$vars['rev_deleted'] = $wgSdDeleted;												# SD
 		$vars['rev_len'] = $wgSdSize;														# SD
@@ -100,9 +102,32 @@ function sdOnPageContentSaveComplete( $article, $user, $content, $summary,					#
 	$dbw->update( 'revision', $vars, array( 'rev_id' => $revision->getId() ) );				# SD
 	/*if ( $pageVars ) {
 		$dbw->update( 'page', $pageVars, array( 'page_id' => $revision->getPage() ) );				# SD
+	}*/
+	if ( $wgSdTouch && $wgSdUseTouch ) {
+		$res = $dbw->select(
+			array( 'pagelinks' ),
+			array( 'pl_from' ),
+			array(
+				'pl_namespace' => $wgSdNamespace,
+				'pl_title' => $unprefixedTitle
+			)
+		);
+		#$contents = '';
+		foreach ( $res as $row ) {
+			$contents .= $row->pl_from . "\n";
+			$dbw->update(
+				'page',
+				#array( 'page_touched' => '20181212121212' ),
+				array( 'page_touched' => $revision->getTimestamp() ),
+				#array( 'page_touched' => $dbw->timestamp() ),
+				array( 'page_id' => $row->pl_from )
+				#array( '1=1' )
+			);
+		}
+		#file_put_contents ( "/var/www/html/testdata.txt", $contents );
 	}
-	return true;																			# SD*/
-}																							# SD
+	return true;																			
+}
 
 # Does this work?
 $wgHooks['InitializeArticleMaybeRedirect'][] = 'onInitializeArticleMaybeRedirect';

@@ -41,7 +41,8 @@ class ApiEditPage extends ApiBase {
 		global $wgSdRemoteRev;		# SD
 		global $wgSdDeleted;		# SD
 		global $wgSdSize;			# SD
-		global $wgTouched;
+		global $wgSdTouch;			# SD
+		global $wgSdUseTouch;
 		$this->useTransactionalTimeLimit();
 
 		$user = $this->getUser();
@@ -228,7 +229,7 @@ class ApiEditPage extends ApiBase {
 		}																						# SD
 		
 		// See if we have any other pages with this title										# SD
-		/*if ( $params['remoterev'] ) {															# SD
+		if ( $wgSdUseTouch && $params['remoterev'] ) {											# SD
 			$dbw = wfGetDB( DB_MASTER );														# SD
 			$field = $dbw->selectField(
 				'revision',
@@ -239,26 +240,9 @@ class ApiEditPage extends ApiBase {
 				)
 			);
 			if ( !$field ) { // This is a new page; touch all pages that link to it
-				$res = $dbw->select(
-					array( 'pagelinks' ),
-					array( 'pl_from' ),
-					array(
-						'pl_namespace' => $params['namespace'],
-						'pl_title' => $remoteTitle->getDBkey()
-					)
-				);
-				#$touched = $dbw->timestamp();
-				$touched = '20181113025537';
-				$wgSdTouched = $touched;
-				foreach ( $res as $row ) {
-					$dbw->update(
-						'page',
-						array( 'page_touched' => $touched ),
-						array( 'page_id' => $row->pl_from )
-					);
-				}
+				$wgSdTouch = true;
 			}
-		}*/
+		}
 
 		$toMD5 = $params['text'];
 		if ( !is_null( $params['appendtext'] ) || !is_null( $params['prependtext'] ) ) {
