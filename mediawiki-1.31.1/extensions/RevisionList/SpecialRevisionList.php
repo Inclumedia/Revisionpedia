@@ -23,7 +23,7 @@ class SpecialRevisionList extends SpecialPage {
 				array( 'rev_page' => $title->getArticleID() )
 			);
 			#die( $row->rev_id );
-			$remoteTitleValue = new TitleValue( $row->rev_remote_title, intval( $row->rev_remote_namespace) );
+			$remoteTitleValue = new TitleValue( intval( $row->rev_remote_namespace), $row->rev_remote_title );
 			$remoteTitle = Title::newFromTitleValue( $remoteTitleValue );
 			$par = $remoteTitle->getPrefixedText();
 			$title = Title::newFromText( $par );

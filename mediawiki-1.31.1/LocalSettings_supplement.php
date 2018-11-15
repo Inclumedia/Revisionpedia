@@ -129,7 +129,7 @@ function sdOnPageContentSaveComplete( $article, $user, $content, $summary,					#
 	return true;																			
 }
 
-# Does this work?
+# For when you click on blue links
 $wgHooks['InitializeArticleMaybeRedirect'][] = 'onInitializeArticleMaybeRedirect';
 function onInitializeArticleMaybeRedirect( &$title, &$request, &$ignoreRedirect, &$target, &$article ) {
 	if ( $title->getNamespace() !== 0 ) {
@@ -222,7 +222,7 @@ class IncomingActionExtension {
 	}
 }
 
-# Does this even work or do anything useful?
+# Template transclusion
 $wgHooks['BeforeParserFetchTemplateAndtitle'][] = 'onBeforeParserFetchTemplateAndtitle';
 function onBeforeParserFetchTemplateAndtitle( $parser, $title, &$skip, &$id ) {
 	$dbr = wfGetDB( DB_REPLICA );
@@ -243,8 +243,35 @@ function onBeforeParserFetchTemplateAndtitle( $parser, $title, &$skip, &$id ) {
 	return;
 }
 
+# Displaytitle
+$wgHooks['ParserBeforeStrip'][] = 'onParserBeforeStrip';
+function onParserBeforeStrip( &$parser, &$text, &$strip_state ) {
+	$title = $parser->getTitle();
+	if ( $title->getNamespace() != NS_REVISION ) {
+		return true;
+	}
+	$dbr = wfGetDB( DB_REPLICA );
+	$row = $dbr->selectRow(
+		'revision',
+		array( 'rev_remote_namespace', 'rev_remote_title' ),
+		array( 'rev_remote_rev' => $title->getDBkey() )
+	);
+	if ( !$row ) {
+		return true;
+	}
+	$titleValue = new TitleValue( intval( $row->rev_remote_namespace ), $row->rev_remote_title );
+	$newTitle = Title::newFromTitleValue( $titleValue );
+	$displayTitle = $parser->getOutput()->getDisplayTitle();
+	$parser->mOutput->setDisplayTitle( 'Revision:' . str_replace( '_', ' ', $title->getDBkey() )
+		. ' (' . str_replace( '_', ' ', $newTitle->getPrefixedText() ) . ')' );
+	return true;
+}
 
 $wgGroupPermissions['sysop']['deleterevision'] = true;
+
+$wgImportSources = array(
+      'wikipedia'
+);
 
 $wgShowSQLErrors = true;
 $wgDebugDumpSql  = true;
