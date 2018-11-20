@@ -30,7 +30,7 @@ class SpecialRevisionList extends SpecialPage {
 		}
 		$res = $dbr->select(
 			array( 'revision', 'tag_summary' ),
-			array( 'rev_id', 'rev_remote_rev', 'rev_timestamp', 'rev_user_text',
+			array( 'rev_id', 'rev_remote_rev', 'rev_timestamp', 'rev_minor_edit', 'rev_user_text',
 				'rev_len',  'rev_comment', 'rev_deleted', 'ts_tags' ),
 			array(
 				'rev_remote_namespace' => $title->getNamespace(),
@@ -42,7 +42,7 @@ class SpecialRevisionList extends SpecialPage {
 		);
 		$wikitext = "==[[$par]]==\n";
 		$wikitext .= '{| class=' . '"' . 'wikitable' . '"' ."\n|-\n"
-			. "!Date/time\n!User\n!Length\n!Comment\n!Tags\n";
+			. "!Date/time\n!User\n!m\n!Length\n!Comment\n!Tags\n";
 		$empty = true;
 		$lengths = array();
 		foreach ( $res as $row ) {
@@ -84,11 +84,17 @@ class SpecialRevisionList extends SpecialPage {
 					$row->rev_user_text . "|Talk]]) ([[Special:Contributions/" .
 					$row->rev_user_text . "|Contribs]])</sup>\n";
 			}
-			$wikitext .= "|" . $lengths[$row->rev_id] . "\n";
+			$wikitext .= '|';
+			if ( $row->rev_minor_edit ) {
+				$wikitext .= "'''m'''";
+			}
+			$wikitext .= "\n|" . $lengths[$row->rev_id] . "\n";
 			if ( $row->rev_deleted & (1 << 1) ) {
 				$wikitext .= "|<s>''(Edit summary removed)''</s>\n";
 			} else {
-				$wikitext .= "|" . $row->rev_comment . "\n";
+				$thisComment = str_replace( '+', '<nowiki>+</nowiki>', $row->rev_comment );
+				#$thisComment = str_replace( '|', '<nowiki>|</nowiki>', $row->rev_comment );
+				$wikitext .= "|" . $thisComment . "\n";
 			}
 			$wikitext .= "|" . $row->ts_tags . "\n";
 		}

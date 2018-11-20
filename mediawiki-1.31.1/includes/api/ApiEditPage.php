@@ -43,6 +43,7 @@ class ApiEditPage extends ApiBase {
 		global $wgSdSize;			# SD
 		global $wgSdTouch;			# SD
 		global $wgSdUseTouch;
+		global $wgSdLocalRevId;
 		$this->useTransactionalTimeLimit();
 
 		$user = $this->getUser();
@@ -83,6 +84,11 @@ class ApiEditPage extends ApiBase {
 
 		$pageObj = $this->getTitleOrPageId( $params );
 		$titleObj = $pageObj->getTitle();
+		#if ( $titleObj->exists() && $titleObj->getNamespace() == NS_REVISION ) {				# SD
+		#	$pageObj->doDeleteArticleReal( 'Redoing' );
+		#	$pageObj = $this->getTitleOrPageId( $params );
+		#	$titleObj = $pageObj->getTitle();
+		#}
 		if ( $params['remotetitle'] ) {									# SD
 			$remoteTitleValue = new TitleValue ( $params['namespace'],
 				str_replace( ' ', '_', $params['remotetitle'] ) );
@@ -173,7 +179,8 @@ class ApiEditPage extends ApiBase {
 			$row = $dbw->selectRow(																# SD
 				'revision',																		# SD
 				array( 'rev_id', 'rev_deleted', 'rev_comment', 'rev_user', 'rev_user_text',		# SD
-					  'rev_text_id', 'rev_len', 'rev_remote_namespace', 'rev_remote_title' ),	# SD
+					  'rev_text_id', 'rev_len', 'rev_remote_namespace', 'rev_remote_title',		# SD
+					  'rev_minor_edit' ),
 				array( 'rev_remote_rev' => $params['remoterev'] )								# SD
 			);																					# SD
 			// If we had no text before, e.g. because it was hidden before, now let's see if	# SD
@@ -184,9 +191,10 @@ class ApiEditPage extends ApiBase {
 					array( 'old_text' => $params['text'] ),										# SD
 					array( 'old_id' => $row->rev_text_id )										# SD
 				);																				# SD
+				$vars['rev_len'] = strlen( params['text'] );
 			}																					# SD
 			$vars = array();																	# SD
-			// If the page_deleted changed, .g. due to a page move, update that					# SD
+			// If the page_deleted changed, e.g. due to a page move, update that				# SD
 			if ( $params['deleted'] != $row->rev_deleted ) {									# SD
 				$vars['rev_deleted'] = $params['deleted'];										# SD
 			}																					# SD
@@ -198,21 +206,20 @@ class ApiEditPage extends ApiBase {
 			if ( $remoteTitle->getDBkey() != $row->rev_remote_title ) {							# SD
 				$vars['rev_remote_title'] = $remoteTitle->getDBkey();							# SD
 			}																					# SD
-			if ( $params['userid'] && $params['userid'] != $row->rev_user ) {					# SD
-				$vars['rev_user'] = $params['userid'];											# SD
-			}																					# SD
-			// If user_id changed to something other than 0, e.g. because it was hidden			# SD
-			// before, let's update that														# SD
-			if ( $params['userid'] && $params['userid'] != $row->rev_user ) {					# SD
-				$vars['rev_user'] = $params['userid'];											# SD
-			}																					# SD
-			// If username changed to something other than 0, e.g. because it was hidden		# SD
+			// If username changed to something other than blank, e.g. because it was hidden	# SD
 			// before or the user was renamed, let's update that								# SD
 			if ( $params['user'] && $params['user'] != $row->rev_user_text ) {					# SD
 				$vars['rev_user_text'] = $params['user'];										# SD
 			}																					# SD
-			// If username changed to something other than blank, e.g. because it was hidden	# SD
-			// before or the user was renamed, let's update that								# SD
+			// If user_id changed to something other than 0, e.g. because it was hidden			# SD
+			// before, let's update that														# SD
+			if ( $params['userid'] && $params['userid'] != $row->rev_remote_user ) {			# SD
+				$vars['rev_remote_user'] = $params['userid'];									# SD
+			}
+			// If rev_is_minor changed, updated that
+			if ( $params['minor'] && $params['minor'] != $row->rev_minor_edit ) {				# SD
+				$vars['rev_minor_edit'] = 1;
+			}
 			// TODO: At some point, figure out how to involve the comment table in this			# SD
 			if ( $params['summary'] && $params['summary'] != $row->rev_comment ) {				# SD
 				$vars['rev_comment'] = $params['summary'];										# SD
@@ -225,11 +232,12 @@ class ApiEditPage extends ApiBase {
 				);																				# SD
 			}																					# SD
 			$r['result'] = 'Success';															# SD
+			# TODO: Set the $wgLocalRevId and see if we get any mileage out of that?
 			$return;																			# SD
 		}																						# SD
 		
 		// See if we have any other pages with this title										# SD
-		if ( $wgSdUseTouch && $params['remoterev'] ) {											# SD
+		/*if ( $wgSdUseTouch && $params['remoterev'] ) {											# SD
 			$dbw = wfGetDB( DB_MASTER );														# SD
 			$field = $dbw->selectField(
 				'revision',
@@ -242,7 +250,7 @@ class ApiEditPage extends ApiBase {
 			if ( !$field ) { // This is a new page; touch all pages that link to it
 				$wgSdTouch = true;
 			}
-		}
+		}*/
 
 		$toMD5 = $params['text'];
 		if ( !is_null( $params['appendtext'] ) || !is_null( $params['prependtext'] ) ) {
@@ -559,6 +567,7 @@ class ApiEditPage extends ApiBase {
 				$r['title'] = $titleObj->getPrefixedText();
 				$r['contentmodel'] = $articleObject->getContentModel();
 				$newRevId = $articleObject->getLatest();
+				$wgSdLocalRevId = $newRevId;
 				if ( $newRevId == $oldRevId ) {
 					$r['nochange'] = true;
 				} else {

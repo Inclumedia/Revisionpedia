@@ -36,39 +36,55 @@ function sdOnPageContentSaveComplete( $article, $user, $content, $summary,					#
 	global $wgSdSize;																		# SD
 	global $wgSdTouch;																		# SD
 	global $wgSdUseTouch;
+	global $wgSdLocalRevId;
 	$dbw = wfGetDB( DB_MASTER );															# SD
 	$vars = array();																		# SD
 	$pageVars = array();																	# SD
 	if( isset( $wgSdTags ) ) {
 		$csvTags = '';
 		$firstOne = true;
+		#file_put_contents ( "/var/www/html/testdata.txt", $wgSdTags );
 		$wgSdTags = explode( '|', $wgSdTags );
-		foreach ( $wgSdTags as $wgSdTag ) {	
-			$dbw->insert(
-				'change_tag',
-				array(
-					'ct_rev_id' => $revision->getId(),
-					'ct_tag' => $wgSdTag
-				)
+		if ( is_array( $wgSdTags ) ) {
+			$dbw->delete(
+					'change_tag',
+					array( 'ct_rev_id' => $revision->getId() )
 			);
-			if ( $firstOne ) {
-				$firstOne = false;
-			} else {
-				$csvTags .= ',';
+			foreach ( $wgSdTags as $wgSdTag ) {	
+				$dbw->insert(
+					'change_tag',
+					array(
+						'ct_rev_id' => $revision->getId(),
+						'ct_tag' => $wgSdTag
+					)
+				);
+				if ( $firstOne ) {
+					$firstOne = false;
+				} else {
+					$csvTags .= ',';
+				}
+				$csvTags .= $wgSdTag;
 			}
-			$csvTags .= $wgSdTag;
-		}		
-		$dbw->insert(
-			'tag_summary',
-			array(
-				'ts_rev_id' => $revision->getId(),
-				'ts_tags' => $csvTags
-			)
-		);	
+			if ( $csvTags ) {
+				$dbw->delete(
+					'tag_summary',
+					array( 'ts_rev_id' => $revision->getId() )
+				);
+				$dbw->insert(
+					'tag_summary',
+					array(
+						'ts_rev_id' => $revision->getId(),
+						'ts_tags' => $csvTags
+					)
+				);
+			}
+		}
+		#file_put_contents ( "/var/www/html/testdata.txt", implode(" ",$wgSdTags) );
+		#file_put_contents ( "/var/www/html/testdata.txt", $wgSdTags );
 	}
 	if( isset( $wgSdTimestamp ) ) {															# SD
 		$vars['rev_timestamp'] = $wgSdTimestamp;											# SD
-	}																						# SD
+	}																						# SD*/
 	if( isset( $wgSdUser ) ) {																# SD
 		$vars['rev_user'] = 0;																# SD
 		$vars['rev_user_text'] = $wgSdUser;													# SD
@@ -91,19 +107,22 @@ function sdOnPageContentSaveComplete( $article, $user, $content, $summary,					#
 	}																						# SD
 	/*if( isset( $wgTouched ) ) {																# SD
 		$pageVars['page_touched'] = $wgTouched;												# SD
-	}																						# SD*/
+	}																						# SD*//*
 	if( isset( $wgSdDeleted ) ) {															# SD
 		$vars['rev_deleted'] = $wgSdDeleted;												# SD
 		$vars['rev_len'] = $wgSdSize;														# SD
 	}																						# SD
+	die( 'foo' );
 	if ( !$vars ) {																			# SD
 		return true;																		# SD
-	}																						# SD
+	}																				*/		# SD
 	$dbw->update( 'revision', $vars, array( 'rev_id' => $revision->getId() ) );				# SD
+	#$dbw->update( 'revision', $vars, array( 'rev_id' => $wgSdLocalRevId ) );				# SD
 	/*if ( $pageVars ) {
 		$dbw->update( 'page', $pageVars, array( 'page_id' => $revision->getPage() ) );				# SD
 	}*/
-	if ( $wgSdTouch && $wgSdUseTouch ) {
+	# Disable this because we don't know what we're doing
+	/*if ( $wgSdTouch && $wgSdUseTouch ) {
 		$res = $dbw->select(
 			array( 'pagelinks' ),
 			array( 'pl_from' ),
@@ -123,9 +142,10 @@ function sdOnPageContentSaveComplete( $article, $user, $content, $summary,					#
 				array( 'page_id' => $row->pl_from )
 				#array( '1=1' )
 			);
-		}
+		}*/
 		#file_put_contents ( "/var/www/html/testdata.txt", $contents );
-	}
+	#}
+	#$dbw->update( 'revision', array( 'rev_user_text' => 'Foo' ), array( 'rev_id' => $revision->getId() ) );				# SD
 	return true;																			
 }
 
@@ -153,6 +173,7 @@ function onInitializeArticleMaybeRedirect( &$title, &$request, &$ignoreRedirect,
 	return;
 }
 
+# Links will appear blue
 $wgHooks['HtmlPageLinkRendererBegin'][] = 'sdOnHtmlPageLinkRendererBegin';
 function sdOnHtmlPageLinkRendererBegin( $linkRenderer, $target, &$text, &$extraAttribs, &$query,
 	&$ret ) {
@@ -180,6 +201,7 @@ function sdOnHtmlPageLinkRendererBegin( $linkRenderer, $target, &$text, &$extraA
 	return true;
 }
 
+# Purge extension
 $wgHooks['SkinTemplateNavigation::Universal'][] = 'PurgeActionExtension::contentHook';
 class PurgeActionExtension {
 	public static function contentHook( $skin, array &$content_actions ) {
@@ -199,6 +221,7 @@ class PurgeActionExtension {
 	}
 }
 
+# "Incoming" tab
 $wgHooks['SkinTemplateNavigation::Universal'][] = 'IncomingActionExtension::contentHook';
 class IncomingActionExtension {
 	public static function contentHook( $skin, array &$content_actions ) {
