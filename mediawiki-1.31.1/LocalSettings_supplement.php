@@ -20,6 +20,7 @@ $wgExtraNamespaces[NS_TIMEDTEXT_TALK] = "TimedText_talk";   # underscore require
 $wgExtraNamespaces[NS_REVISION] = "Revision";
 $wgExtraNamespaces[NS_REVISION_TALK] = "Revision_talk";   # underscore required
 $wgSdUseTouch = false;
+#$wgSdMinor = false;
 
 $wgHooks['PageContentSaveComplete'][] = 'sdOnPageContentSaveComplete';						# SD
 function sdOnPageContentSaveComplete( $article, $user, $content, $summary,					# SD
@@ -37,6 +38,7 @@ function sdOnPageContentSaveComplete( $article, $user, $content, $summary,					#
 	global $wgSdTouch;																		# SD
 	global $wgSdUseTouch;
 	global $wgSdLocalRevId;
+	global $wgSdMinor;
 	$dbw = wfGetDB( DB_MASTER );															# SD
 	$vars = array();																		# SD
 	$pageVars = array();																	# SD
@@ -104,6 +106,10 @@ function sdOnPageContentSaveComplete( $article, $user, $content, $summary,					#
 	}																						# SD
 	if( isset( $wgSdRemoteRev ) ) {															# SD
 		$vars['rev_remote_rev'] = $wgSdRemoteRev;											# SD
+	}																						# SD
+	if( isset( $wgSdMinor ) && $wgSdMinor ) {												# SD
+		$vars['rev_minor_edit'] = 1;														# SD
+		#$pageVars['page_remote_namespace'] = $wgSdNamespace;								# SD
 	}																						# SD
 	/*if( isset( $wgTouched ) ) {																# SD
 		$pageVars['page_touched'] = $wgTouched;												# SD

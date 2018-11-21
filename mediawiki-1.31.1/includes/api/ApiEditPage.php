@@ -44,6 +44,7 @@ class ApiEditPage extends ApiBase {
 		global $wgSdTouch;			# SD
 		global $wgSdUseTouch;
 		global $wgSdLocalRevId;
+		global $wgSdMinor;
 		$this->useTransactionalTimeLimit();
 
 		$user = $this->getUser();
@@ -78,6 +79,9 @@ class ApiEditPage extends ApiBase {
 		}																# SD
 		if ( isset( $params['remoterev'] ) ) {							# SD
 			$wgSdRemoteRev = $params['remoterev'];						# SD
+		}																# SD
+		if ( $params['minor'] ) {										# SD
+			$wgSdMinor = true;											# SD
 		}																# SD
 
 		$this->requireAtLeastOneParameter( $params, 'text', 'appendtext', 'prependtext', 'undo' );

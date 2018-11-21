@@ -27,6 +27,7 @@ class SpecialIncomingLinks extends SpecialPage {
 			$par = $remoteTitle->getPrefixedText();
 			$title = Title::newFromText( $par );
 		}
+		#$res = $dbr->selectSQLText(
 		$res = $dbr->select(
 			array( 'pagelinks', 'revision', 'tag_summary' ),
 			array( 'rev_id', 'rev_remote_rev', 'rev_timestamp', 'rev_user_text',
@@ -34,18 +35,22 @@ class SpecialIncomingLinks extends SpecialPage {
 				'rev_remote_title', 'ts_tags' ),
 			array(
 				'pl_namespace' => $title->getNamespace(),
-				'pl_title' => $title->getDBkey()
+				'pl_title' => $title->getDBkey()#,
+				#'pl_from=rev_page'
 			),
 			__METHOD__,
 			array(
-				array( 'ORDER BY' => 'rev_remote_namespace ASC, rev_remote_remote_title ASC, rev_timestamp DESC' ),
-				array( 'LIMIT' => 500 )
-			), array( 'revision' => array( 'INNER JOIN', array(
-				'pl_from=rev_page'
-			) ), 'tag_summary' => array( 'LEFT JOIN', array(
-				'rev_id=ts_rev_id' 
-			) ) )
+				'ORDER BY' => array( 'rev_remote_namespace ASC', 'rev_remote_title ASC', 'rev_timestamp DESC' ),
+				#'ORDER BY' => 'rev_remote_namespace ASC, rev_remote_title ASC, rev_timestamp DESC',
+				'LIMIT' => 500
+			), array(
+				'revision' => array(
+					'INNER JOIN', 'pl_from=rev_page' ),
+				'tag_summary' => array(
+					'LEFT JOIN', 'rev_id=ts_rev_id' )
+			)
 		);
+		#die ( $res );
 		$wikitext = "==[[$par]]==\n";
 		$empty = true;
 		$previousTitleText = '';

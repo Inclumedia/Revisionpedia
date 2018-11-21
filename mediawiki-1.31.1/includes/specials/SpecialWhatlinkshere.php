@@ -85,14 +85,18 @@ class SpecialWhatLinksHere extends IncludableSpecialPage {
 		
 		if ( $this->target->getNamespace() === NS_REVISION ) {				# SD
 			$dbr = wfGetDB( DB_REPLICA );									# SD
-			$titlePrefixedText = $dbr->selectField(							# SD
+			$row = $dbr->selectRow(											# SD
 				'revision',													# SD
-				'rev_remote_pfx_title',										# SD
+				array ( 'rev_remote_namespace', 'rev_remote_title' ),		# SD
 				array( 'rev_id' => $this->target->getLatestRevID() )		# SD
 			);																# SD
-			if ( $titlePrefixedText ) {										# SD
-				$this->target = Title::newFromText( $titlePrefixedText );	# SD
-			}																# SD
+			$remoteTitleValue = new TitleValue( intval( $row->rev_remote_namespace), $row->rev_remote_title );
+			$this->target = Title::newFromTitleValue( $remoteTitleValue );
+			#$remoteTitle = Title::newFromTitleValue( $remoteTitleValue );
+			#$titlePrefixedText = $remoteTitle->getPrefixedText();
+			#if ( $titlePrefixedText ) {										# SD
+			#	$this->target = Title::newFromText( $titlePrefixedText );	# SD
+			#}																# SD
 		}																	# SD
 
 		$this->getSkin()->setRelevantTitle( $this->target );

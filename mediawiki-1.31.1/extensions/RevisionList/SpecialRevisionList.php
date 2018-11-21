@@ -37,12 +37,11 @@ class SpecialRevisionList extends SpecialPage {
 				'rev_remote_title' => $title->getDBkey()
 			), __METHOD__,
 			array( 'ORDER BY' => 'rev_timestamp DESC', 'LIMIT' => 500 ),
-			array( 'tag_summary' => array( 'LEFT JOIN', array(
-				'rev_id=ts_rev_id' ) ) )
+			array( 'tag_summary' => array( 'LEFT JOIN', 'rev_id=ts_rev_id' ) )
 		);
 		$wikitext = "==[[$par]]==\n";
 		$wikitext .= '{| class=' . '"' . 'wikitable' . '"' ."\n|-\n"
-			. "!Date/time\n!User\n!m\n!Length\n!Comment\n!Tags\n";
+			. "!Date/time\n!User\n!m\n!Length\n!Change\n!Comment\n!Tags\n";
 		$empty = true;
 		$lengths = array();
 		foreach ( $res as $row ) {
@@ -88,6 +87,7 @@ class SpecialRevisionList extends SpecialPage {
 			if ( $row->rev_minor_edit ) {
 				$wikitext .= "'''m'''";
 			}
+			$wikitext .= "\n|" . $row->rev_len;
 			$wikitext .= "\n|" . $lengths[$row->rev_id] . "\n";
 			if ( $row->rev_deleted & (1 << 1) ) {
 				$wikitext .= "|<s>''(Edit summary removed)''</s>\n";
