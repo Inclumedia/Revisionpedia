@@ -93,7 +93,7 @@ class SpecialRevisionList extends SpecialPage {
 				$wikitext .= "|<s>''(Edit summary removed)''</s>\n";
 			} else {
 				$thisComment = str_replace( '+', '<nowiki>+</nowiki>', $row->rev_comment );
-				#$thisComment = str_replace( '|', '<nowiki>|</nowiki>', $row->rev_comment );
+				$thisComment = str_replace( '|', '<nowiki>|</nowiki>', $row->rev_comment );
 				$wikitext .= "|" . $thisComment . "\n";
 			}
 			$wikitext .= "|" . $row->ts_tags . "\n";
@@ -101,8 +101,9 @@ class SpecialRevisionList extends SpecialPage {
 		if ( $empty ) {
 			$output->addWikiText( "Page '''[[$par]]'''" . " not found" );
 			return;
+		} else {
+			$wikitext .= "|-\n|}";
 		}
-		$wikitext .= "|-\n|}";
 		$output->addWikiText ( $wikitext );
 	}
 }

@@ -61,7 +61,7 @@ class SpecialIncomingLinks extends SpecialPage {
 			$titleText = $title->getPrefixedText();
 			if ( $titleText != $previousTitleText ) {
 				if ( $previousTitleText ) {
-					$wikitext .= "|-\n";
+					$wikitext .= "|-\n|}\n";
 				}
 				$wikitext .= '===[[' . $titleText . "]]===\n";
 				$wikitext .= '{| class=' . '"' . 'wikitable' . '"' ."\n|-\n"
@@ -88,7 +88,9 @@ class SpecialIncomingLinks extends SpecialPage {
 			if ( $row->rev_deleted & (1 << 1) ) {
 				$wikitext .= "|<s>''(Edit summary removed)''</s>\n";
 			} else {
-				$wikitext .= "|" . $row->rev_comment . "\n";
+				$thisComment = str_replace( '+', '<nowiki>+</nowiki>', $row->rev_comment );
+				$thisComment = str_replace( '|', '<nowiki>|</nowiki>', $row->rev_comment );
+				$wikitext .= "|" . $thisComment . "\n";
 			}
 			$wikitext .= "|" . $row->ts_tags . "\n";
 			$previousTitleText = $titleText;
@@ -97,6 +99,7 @@ class SpecialIncomingLinks extends SpecialPage {
 			$output->addWikiText( "No incoming links to page '''[[$par]]'''" . " were found" );
 			return;
 		}
+		#$output->addWikiText ( '<nowiki>' . $wikitext . '</nowiki>' );
 		$output->addWikiText ( $wikitext );
 	}
 }
