@@ -50,34 +50,34 @@ class ApiEditPage extends ApiBase {
 		$user = $this->getUser();
 		$params = $this->extractRequestParams();
 		
-		if ( isset( $params['timestamp'] ) ) {							# SD
+		if ( $params['timestamp'] !== false ) {							# SD
 			$wgSdTimestamp = $params['timestamp'];						# SD
 		}																# SD
-		if ( isset( $params['namespace'] ) ) {							# SD
+		if ( $params['namespace'] !== false ) {							# SD
 			$wgSdNamespace = $params['namespace'];						# SD
 		}																# SD
-		if ( isset( $params['remotetitle'] ) ) {						# SD
+		if ( $params['remotetitle'] !== false ) {						# SD
 			$wgSdTitle = $params['remotetitle'];						# SD
 		}																# SD
-		if ( isset( $params['user'] ) ) {								# SD
+		if ( $params['user'] !== false ) {								# SD
 			$wgSdUser = $params['user'];								# SD
 		}																# SD
-		if ( isset( $params['userid'] ) ) {								# SD
+		if ( $params['userid'] !== false ) {								# SD
 			$wgSdUserId = $params['userid'];							# SD
 		}																# SD
-		if ( isset( $params['sdtags'] ) ) {								# SD
+		if ( $params['sdtags'] !== false ) {								# SD
 			$wgSdTags = $params['sdtags'];								# SD
 		}																# SD
-		if ( isset( $params['page'] ) ) {								# SD
+		if ( $params['page'] !== false ) {								# SD
 			$wgSdPage = $params['page'];								# SD
 		}																# SD
-		if ( isset( $params['deleted'] ) ) {							# SD
+		if ( $params['deleted'] !== false ) {							# SD
 			$wgSdDeleted = $params['deleted'];							# SD
 		}																# SD
-		if ( isset( $params['size'] ) ) {								# SD
+		if ( $params['size'] !== false ) {								# SD
 			$wgSdSize = $params['size'];								# SD
 		}																# SD
-		if ( isset( $params['remoterev'] ) ) {							# SD
+		if ( $params['remoterev'] !== false ) {							# SD
 			$wgSdRemoteRev = $params['remoterev'];						# SD
 		}																# SD
 		if ( $params['minor'] ) {										# SD
@@ -187,6 +187,7 @@ class ApiEditPage extends ApiBase {
 					  'rev_minor_edit' ),
 				array( 'rev_remote_rev' => $params['remoterev'] )								# SD
 			);																					# SD
+			$vars = array();																	# SD
 			// If we had no text before, e.g. because it was hidden before, now let's see if	# SD
 			// we have it; if so, update														# SD
 			if ( $row->rev_len == 0 && strlen( params['text'] ) > 0 ) {							# SD
@@ -195,10 +196,9 @@ class ApiEditPage extends ApiBase {
 					array( 'old_text' => $params['text'] ),										# SD
 					array( 'old_id' => $row->rev_text_id )										# SD
 				);																				# SD
-				$vars['rev_len'] = strlen( params['text'] );
+				$vars['rev_len'] = strlen( $params['text'] );
 			}																					# SD
-			$vars = array();																	# SD
-			// If the page_deleted changed, e.g. due to a page move, update that				# SD
+			// If the page_deleted changed, update that											# SD
 			if ( $params['deleted'] != $row->rev_deleted ) {									# SD
 				$vars['rev_deleted'] = $params['deleted'];										# SD
 			}																					# SD
@@ -237,6 +237,7 @@ class ApiEditPage extends ApiBase {
 			}																					# SD
 			$r['result'] = 'Success';															# SD
 			# TODO: Set the $wgLocalRevId and see if we get any mileage out of that?
+			# Not sure why we would; maybe remove this comment later
 			$return;																			# SD
 		}																						# SD
 		
@@ -733,34 +734,44 @@ class ApiEditPage extends ApiBase {
 				ApiBase::PARAM_TYPE => ContentHandler::getContentModels(),
 			],											# SD
 			'namespace' => [							# SD
-				ApiBase::PARAM_TYPE => 'integer'		# SD
+				ApiBase::PARAM_TYPE => 'integer',		# SD
+				ApiBase::PARAM_DFLT => false
 			],											# SD
 			'remotetitle' => [							# SD
-				ApiBase::PARAM_TYPE => 'text'			# SD
+				ApiBase::PARAM_TYPE => 'text',			# SD
+				ApiBase::PARAM_DFLT => false
 			],											# SD
 			'page' => [									# SD
-				ApiBase::PARAM_TYPE => 'integer'		# SD
+				ApiBase::PARAM_TYPE => 'integer',		# SD
+				ApiBase::PARAM_DFLT => false
 			],											# SD
 			'timestamp' => [							# SD
-				ApiBase::PARAM_TYPE => 'timestamp'		# SD
+				ApiBase::PARAM_TYPE => 'timestamp',		# SD
+				ApiBase::PARAM_DFLT => false
 			],											# SD
 			'user' => [									# SD
-				ApiBase::PARAM_TYPE => 'text'			# SD
+				ApiBase::PARAM_TYPE => 'text',			# SD
+				ApiBase::PARAM_DFLT => false
 			],											# SD
 			'userid' => [								# SD
-				ApiBase::PARAM_TYPE => 'integer'		# SD
+				ApiBase::PARAM_TYPE => 'integer',		# SD
+				ApiBase::PARAM_DFLT => false
 			],											# SD
 			'sdtags' => [								# SD
-				ApiBase::PARAM_TYPE => 'text'			# SD
+				ApiBase::PARAM_TYPE => 'text',			# SD
+				ApiBase::PARAM_DFLT => false
 			],											# SD
 			'remoterev' => [							# SD
-				ApiBase::PARAM_TYPE => 'integer'		# SD
+				ApiBase::PARAM_TYPE => 'integer',		# SD
+				ApiBase::PARAM_DFLT => false,
 			],											# SD
 			'deleted' => [								# SD
-				ApiBase::PARAM_TYPE => 'integer'		# SD
+				ApiBase::PARAM_TYPE => 'integer',		# SD
+				ApiBase::PARAM_DFLT => false,
 			],											# SD
 			'size' => [									# SD
-				ApiBase::PARAM_TYPE => 'integer'		# SD
+				ApiBase::PARAM_TYPE => 'integer',		# SD
+				ApiBase::PARAM_DFLT => false
 			],
 			'token' => [
 				// Standard definition automatically inserted

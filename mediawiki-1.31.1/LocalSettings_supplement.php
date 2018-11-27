@@ -20,6 +20,7 @@ $wgExtraNamespaces[NS_TIMEDTEXT_TALK] = "TimedText_talk";   # underscore require
 $wgExtraNamespaces[NS_REVISION] = "Revision";
 $wgExtraNamespaces[NS_REVISION_TALK] = "Revision_talk";   # underscore required
 $wgSdUseTouch = false;
+$wgUseAutomaticEditSummaries = false;
 #$wgSdMinor = false;
 
 $wgHooks['PageContentSaveComplete'][] = 'sdOnPageContentSaveComplete';						# SD
@@ -113,15 +114,14 @@ function sdOnPageContentSaveComplete( $article, $user, $content, $summary,					#
 	}																						# SD
 	/*if( isset( $wgTouched ) ) {																# SD
 		$pageVars['page_touched'] = $wgTouched;												# SD
-	}																						# SD*//*
-	if( isset( $wgSdDeleted ) ) {															# SD
+	}*/																						# SD
+	if( isset( $wgSdDeleted ) && $wgSdDeleted ) {											# SD
 		$vars['rev_deleted'] = $wgSdDeleted;												# SD
 		$vars['rev_len'] = $wgSdSize;														# SD
 	}																						# SD
-	die( 'foo' );
 	if ( !$vars ) {																			# SD
 		return true;																		# SD
-	}																				*/		# SD
+	}																						# SD
 	$dbw->update( 'revision', $vars, array( 'rev_id' => $revision->getId() ) );				# SD
 	#$dbw->update( 'revision', $vars, array( 'rev_id' => $wgSdLocalRevId ) );				# SD
 	/*if ( $pageVars ) {
